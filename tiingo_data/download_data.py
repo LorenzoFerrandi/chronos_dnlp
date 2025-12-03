@@ -1,8 +1,8 @@
 import pathlib
 import os
 import pandas as pd
-from tiingo.tiingo import get_daily_returns
-from tiingo.tiingo_tickers import (
+from tiingo_data.tiingo import get_daily_returns
+from tiingo_data.tiingo_tickers import (
     TICKERS,
 )
 
@@ -34,7 +34,7 @@ def download_and_cache_data(start_date, end_date):
 def get_daily_returns_data_cached(ticker: str = None) -> pd.DataFrame:
     current_path = pathlib.Path(__file__).resolve()
     parent_dir = current_path.parent
-    grandparent_dir = parent_dir.parent.parent  # chronos_dnlp
+    grandparent_dir = parent_dir.parent  # chronos_dnlp
 
     if ticker:
         # Load a single stock
@@ -58,8 +58,8 @@ def get_daily_returns_data_cached(ticker: str = None) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    # download_and_cache_data(start_date="2010-01-01", end_date="2025-11-20")
+    download_and_cache_data(start_date="2005-01-01", end_date="2025-11-20")
 
-    df = get_daily_returns_data_cached()
-    print(df.head())
-    print(df.tail())
+    # df = get_daily_returns_data_cached()
+    # print(df.head())
+    # print(df.tail())

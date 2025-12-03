@@ -20,7 +20,7 @@ def get_daily_returns(tickers: list, start_date: str, end_date: str) -> pd.DataF
 
 
 if __name__ == "__main__":
-    df_ret = get_daily_returns(["AAPL"], start_date="2012-01-01", end_date="2025-11-20")
+    df_ret = get_daily_returns(["AAPL"], start_date="2005-01-01", end_date="2025-11-20")
     print(df_ret.head())
     print(df_ret.tail())
 
