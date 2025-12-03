@@ -1,4 +1,4 @@
-name: simulations_lab
+name: chronos_dnlp
 channels:
   - conda-forge
   - defaults
