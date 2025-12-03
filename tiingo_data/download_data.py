@@ -17,13 +17,8 @@ def download_and_cache_data(start_date, end_date):
         try:
             print(f"Downloading {ticker}...", end=" ")
 
-            # Download entire available history
             df = get_daily_returns([ticker], start_date=start_date, end_date=end_date)
-
-            # Reset index to make 'date' and 'symbol' columns (easier for filtering later)
             df = df.reset_index()
-
-            # Save to Parquet
             df.to_parquet(file_path)
             print("Done.")
 
@@ -40,7 +35,7 @@ def get_daily_returns_data_cached(ticker: str = None) -> pd.DataFrame:
         # Load a single stock
         df = pd.read_parquet(grandparent_dir / f"{DATA_DIR}/{ticker}.parquet")
     else:
-        # OR Load ALL stocks into one single DataFrame (fast with Parquet)
+        # OR Load all stocks into one single DataFrame (fast with Parquet)
         all_files = [
             grandparent_dir / os.path.join(DATA_DIR, f)
             for f in os.listdir(grandparent_dir / DATA_DIR)
