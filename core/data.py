@@ -2,7 +2,7 @@
 Data preparation utilities for Chronos-2 multivariate fine-tuning.
 """
 
-from typing import Mapping
+from typing import Iterable, Mapping
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,7 @@ def create_multivariate_windows(
     context_length: int,
     prediction_length: int,
     stride: int = 50,
+    group_id: int | None = None,
 ) -> list[Mapping[str, np.ndarray]]:
     """
     Create multiple multivariate training windows from a wide DataFrame.
@@ -27,11 +28,14 @@ def create_multivariate_windows(
         prediction_length: Number of future timesteps the model predicts.
         stride: Step size between consecutive windows. Smaller stride = more windows
             but more overlap. Default 50.
+        group_id: Optional group identifier to attach to each sample. When provided,
+            Chronos-2 can use this to separate groups for multivariate attention.
 
     Returns:
         List of dicts, each with key "target" mapping to array of shape
         (N, context_length + prediction_length). Each dict is one training sample
-        where all N stocks are jointly modeled.
+        where all N stocks are jointly modeled. If group_id is provided, each sample
+        also includes a "group_id" field.
 
     Example:
         >>> df = pd.DataFrame(np.random.randn(1000, 50))  # 1000 days, 50 stocks
@@ -45,11 +49,58 @@ def create_multivariate_windows(
     N, T = data.shape
     window_len = context_length + prediction_length
 
-    inputs = []
+    inputs: list[Mapping[str, np.ndarray]] = []
     for start in range(0, T - window_len + 1, stride):
         window = data[:, start : start + window_len]  # (N, window_len)
-        inputs.append({"target": window})
+        sample: dict[str, np.ndarray] = {"target": window}
+        if group_id is not None:
+            sample["group_id"] = np.int64(group_id)
+        inputs.append(sample)
 
+    return inputs
+
+
+def create_grouped_multivariate_windows(
+    df: pd.DataFrame,
+    groups: Mapping[str, Iterable[str]],
+    context_length: int,
+    prediction_length: int,
+    stride: int = 50,
+    group_id_offset: int = 0,
+) -> list[Mapping[str, np.ndarray]]:
+    """
+    Create multivariate training windows per group with distinct group IDs.
+
+    Each group is trained on its own subset of tickers, and every sample is
+    tagged with a unique group_id to enable Chronos-2 group-aware attention.
+
+    Args:
+        df: Wide DataFrame with shape (T, N) where rows are dates and columns are stocks.
+            Should be cleaned (no NaNs) before calling this function.
+        groups: Mapping of group name -> iterable of ticker symbols.
+        context_length: Number of historical timesteps the model sees as input.
+        prediction_length: Number of future timesteps the model predicts.
+        stride: Step size between consecutive windows. Default 50.
+        group_id_offset: Starting integer for group IDs. Default 0.
+
+    Returns:
+        List of dicts with "target" arrays and "group_id" values.
+    """
+    inputs: list[Mapping[str, np.ndarray]] = []
+    for group_idx, (_, tickers) in enumerate(groups.items()):
+        available = [ticker for ticker in tickers if ticker in df.columns]
+        if not available:
+            continue
+        group_df = df[available]
+        inputs.extend(
+            create_multivariate_windows(
+                group_df,
+                context_length=context_length,
+                prediction_length=prediction_length,
+                stride=stride,
+                group_id=group_id_offset + group_idx,
+            )
+        )
     return inputs
 
 
