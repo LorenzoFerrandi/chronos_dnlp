@@ -25,5 +25,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+notebooks/outputs/chronos2_sft/
+notebooks/outputs/chronos2_sft_lora/
 
 
